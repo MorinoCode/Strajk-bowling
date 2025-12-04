@@ -4,15 +4,15 @@ import Navigation from "./Navigation";
 
 const mockNavigate = vi.fn();
 
-vi.mock("react-router-dom", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("react-router-dom", async (orig) => {
+  const actual = await orig();
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-describe("Navigation Component", () => {
+describe("Navigation Component – full coverage", () => {
   beforeEach(() => {
     mockNavigate.mockClear();
   });
@@ -26,7 +26,7 @@ describe("Navigation Component", () => {
     expect(screen.getByRole("img")).toBeInTheDocument();
   });
 
-  test("does NOT show menu links by default", () => {
+  test("menu is hidden by default", () => {
     render(
       <MemoryRouter>
         <Navigation />
@@ -37,7 +37,7 @@ describe("Navigation Component", () => {
     expect(screen.getByText("Confirmation")).toHaveClass("hide");
   });
 
-  test("toggles menu visibility when icon is clicked", () => {
+  test("toggleMenu opens menu", () => {
     render(
       <MemoryRouter>
         <Navigation />
@@ -51,29 +51,67 @@ describe("Navigation Component", () => {
     expect(screen.getByText("Confirmation")).not.toHaveClass("hide");
   });
 
-  test("navigates to booking page when clicking 'Booking'", () => {
+  test("toggleMenu closes menu again", () => {
     render(
       <MemoryRouter>
         <Navigation />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole("img"));
+    const icon = screen.getByRole("img");
+
+    fireEvent.click(icon);  // open
+    fireEvent.click(icon);  // close
+
+    expect(screen.getByText("Booking")).toHaveClass("hide");
+    expect(screen.getByText("Confirmation")).toHaveClass("hide");
+  });
+
+  test("navigate to Booking when clicking Booking link", () => {
+    render(
+      <MemoryRouter>
+        <Navigation />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("img")); // open menu
     fireEvent.click(screen.getByText("Booking"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
-  test("navigates to confirmation page when clicking 'Confirmation'", () => {
+  test("navigate to Confirmation when clicking Confirmation link", () => {
     render(
       <MemoryRouter>
         <Navigation />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole("img"));
+    fireEvent.click(screen.getByRole("img")); // open menu
     fireEvent.click(screen.getByText("Confirmation"));
 
+    expect(mockNavigate).toHaveBeenCalledWith("/confirmation");
+  });
+
+  test("clicking Booking when menu is closed still triggers navigate", () => {
+    render(
+      <MemoryRouter>
+        <Navigation />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Booking"));
+    expect(mockNavigate).toHaveBeenCalledWith("/");
+  });
+
+  test("clicking Confirmation when menu is closed still triggers navigate", () => {
+    render(
+      <MemoryRouter>
+        <Navigation />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Confirmation"));
     expect(mockNavigate).toHaveBeenCalledWith("/confirmation");
   });
 });
