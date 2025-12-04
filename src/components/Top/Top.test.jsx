@@ -13,10 +13,10 @@ describe("Top Component", () => {
     expect(heading).toHaveTextContent("BOOKING");
   });
 
-  // it("renders empty heading when no title is provided", () => {
-  //   render(<Top />);
+  it("renders empty heading when no title is provided", () => {
+    render(<Top />);
 
-  //   const heading = screen.getByRole("heading", { level: 1 });
-  //   expect(heading).toHaveTextContent("");
-  // });
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent("");
+  });
 });
