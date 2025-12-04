@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import Top from "./Top";
-import { MemoryRouter } from "react-router-dom";
+
 
 describe("Top Component", () => {
   it("renders logo image and heading", () => {
     render(
-      <MemoryRouter>
-        <Top />
-      </MemoryRouter>
+      
+        <Top title={"BOOKING"}/>
+      
     );
 
     const img = screen.getByRole("img");
