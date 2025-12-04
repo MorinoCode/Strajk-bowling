@@ -10,12 +10,12 @@ export default defineConfig({
 
     include: ["src/**/*.test.jsx"],
 
-    exclude: [
+    eexclude: [
       "src/main.jsx",
       "src/App.jsx",
       "src/router.jsx",
       "src/**/*.scss",
-      "src/**/*.svg"
+      "src/**/*.svg",
     ],
   },
 });
