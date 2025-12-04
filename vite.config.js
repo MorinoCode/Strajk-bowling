@@ -5,17 +5,17 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: "./setupTests.js",
+    environment: "node",
+    setupFiles: "./src/setupTests.js",
 
     include: ["src/**/*.test.jsx"],
 
-    exclude: [
+    eexclude: [
       "src/main.jsx",
       "src/App.jsx",
       "src/router.jsx",
       "src/**/*.scss",
-      "src/**/*.svg"
+      "src/**/*.svg",
     ],
   },
 });
