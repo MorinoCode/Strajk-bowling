@@ -13,6 +13,12 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       reportsDirectory: "coverage",
+      exclude: [
+        "**/*.scss",
+        "**/*.css",
+        "**/*.svg",
+        "**/mocks/**",
+      ],
     },
   },
 });
