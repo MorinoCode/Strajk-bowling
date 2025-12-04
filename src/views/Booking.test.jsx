@@ -1,124 +1,229 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Booking from "./Booking";
+import Confirmation from "./Confirmation";
+import { vi } from "vitest";
 
-vi.mock("../components/Navigation/Navigation", () => ({
-  default: () => <nav>Navigation</nav>,
-}));
+const sel = (role) =>
+  ({
+    when: () => document.querySelector("input[name='when']"),
+    time: () => document.querySelector("input[name='time']"),
+    people: () => document.querySelector("input[name='people']"),
+    lanes: () => document.querySelector("input[name='lanes']"),
+  }[role]());
 
-vi.mock("../components/Top/Top", () => ({
-  default: ({ title }) => <h1>{title}</h1>,
-}));
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
-// Mock fetch
-global.fetch = vi.fn(() =>
-  Promise.resolve({
-    json: () =>
-      Promise.resolve({
-        bookingDetails: {
-          when: "2024-10-10T10:00",
-          people: 2,
-          lanes: 1,
-          shoes: ["41", "42"],
-        },
-      }),
-  })
-);
+beforeEach(() => {
+  sessionStorage.clear();
+  mockNavigate.mockClear();
+});
 
-const setup = () => {
+test("renders Booking view correctly", () => {
   render(
     <MemoryRouter>
       <Booking />
     </MemoryRouter>
   );
-};
 
-describe("Booking Component", () => {
-  it("renders initial UI correctly", () => {
-    setup();
-
-    expect(screen.getByText("Booking")).toBeInTheDocument();
-    expect(screen.getByText("Shoes")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "strIIIIIike!" })).toBeInTheDocument();
-  });
-
-  it("shows error when required fields are missing", () => {
-    setup();
-    fireEvent.click(screen.getByRole("button", { name: /strIIIIIike/i }));
-
-    expect(screen.getByText("Alla fälten måste vara ifyllda")).toBeInTheDocument();
-  });
-
-  it("shows error when number of shoes does not match number of players", () => {
-    setup();
-
-    const dateInput = document.querySelector('input[name="when"]');
-    const timeInput = document.querySelector('input[name="time"]');
-    const peopleInput = document.querySelector('input[name="people"]');
-    const lanesInput = document.querySelector('input[name="lanes"]');
-
-    fireEvent.change(dateInput, { target: { value: "2024-10-10" } });
-    fireEvent.change(timeInput, { target: { value: "10:00" } });
-    fireEvent.change(peopleInput, { target: { value: "2" } });
-    fireEvent.change(lanesInput, { target: { value: "1" } });
-
-    // Add ONE shoe but players = 2
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /strIIIIIike/i }));
-
-    expect(
-      screen.getByText("Antalet skor måste stämma överens med antal spelare")
-    ).toBeInTheDocument();
-  });
-
-  it("shows error when shoe sizes are empty", () => {
-    setup();
-
-    const dateInput = document.querySelector('input[name="when"]');
-    const timeInput = document.querySelector('input[name="time"]');
-    const peopleInput = document.querySelector('input[name="people"]');
-    const lanesInput = document.querySelector('input[name="lanes"]');
-
-    fireEvent.change(dateInput, { target: { value: "2024-10-10" } });
-    fireEvent.change(timeInput, { target: { value: "10:00" } });
-    fireEvent.change(peopleInput, { target: { value: "1" } });
-    fireEvent.change(lanesInput, { target: { value: "1" } });
-
-    // Add 1 shoe
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-
-    fireEvent.click(screen.getByRole("button", { name: /strIIIIIike/i }));
-
-    expect(screen.getByText("Alla skor måste vara ifyllda")).toBeInTheDocument();
-  });
-
-  it("submits booking successfully when everything is valid", async () => {
-    setup();
-
-    const dateInput = document.querySelector('input[name="when"]');
-    const timeInput = document.querySelector('input[name="time"]');
-    const peopleInput = document.querySelector('input[name="people"]');
-    const lanesInput = document.querySelector('input[name="lanes"]');
-
-    fireEvent.change(dateInput, { target: { value: "2024-10-10" } });
-    fireEvent.change(timeInput, { target: { value: "10:00" } });
-    fireEvent.change(peopleInput, { target: { value: "2" } });
-    fireEvent.change(lanesInput, { target: { value: "1" } });
-
-    // Add 2 shoes
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-
-    // Fill sizes
-    const shoeInputs = document.querySelectorAll("input.shoes__input");
-    fireEvent.change(shoeInputs[0], { target: { value: "41" } });
-    fireEvent.change(shoeInputs[1], { target: { value: "42" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /strIIIIIike/i }));
-
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
-    });
-  });
+  expect(screen.getAllByText("Booking")[0]).toBeInTheDocument();
+  expect(screen.getByText("strIIIIIike!")).toBeInTheDocument();
 });
+
+test("shows error when required fields are missing", () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  expect(screen.getByText("Alla fälten måste vara ifyllda")).toBeInTheDocument();
+});
+
+test("shows error when number of shoes does not match players count", () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.change(sel("when"), { target: { value: "2024-10-10" } });
+  fireEvent.change(sel("time"), { target: { value: "10:30" } });
+  fireEvent.change(sel("people"), { target: { value: 2 } });
+  fireEvent.change(sel("lanes"), { target: { value: 1 } });
+
+  fireEvent.click(screen.getByText("+"));
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  expect(
+    screen.getByText("Antalet skor måste stämma överens med antal spelare")
+  ).toBeInTheDocument();
+});
+
+test("shows error when a shoe size is empty", () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.change(sel("when"), { target: { value: "2024-10-10" } });
+  fireEvent.change(sel("time"), { target: { value: "10:30" } });
+  fireEvent.change(sel("people"), { target: { value: 1 } });
+  fireEvent.change(sel("lanes"), { target: { value: 1 } });
+
+  fireEvent.click(screen.getByText("+"));
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  expect(screen.getByText("Alla skor måste vara ifyllda")).toBeInTheDocument();
+});
+
+test("shows error when players exceed lane capacity", () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.change(sel("when"), { target: { value: "2024-10-10" } });
+  fireEvent.change(sel("time"), { target: { value: "10:30" } });
+  fireEvent.change(sel("people"), { target: { value: 5 } });
+  fireEvent.change(sel("lanes"), { target: { value: 1 } });
+
+  for (let i = 0; i < 5; i++) {
+    fireEvent.click(screen.getByText("+"));
+  }
+
+  const shoes = screen.getAllByRole("textbox");
+  shoes.forEach((shoe, idx) => {
+    fireEvent.change(shoe, { target: { value: `${40 + idx}` } });
+  });
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  expect(
+    screen.getByText("Det får max vara 4 spelare per bana")
+  ).toBeInTheDocument();
+});
+
+test("adds and removes shoe fields correctly", () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.click(screen.getByText("+"));
+  expect(screen.getAllByRole("textbox").length).toBe(1);
+
+  fireEvent.click(screen.getByText("-"));
+  expect(screen.queryByRole("textbox")).toBeNull();
+});
+
+test("successful booking stores confirmation and navigates", async () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.change(sel("when"), { target: { value: "2024-10-10" } });
+  fireEvent.change(sel("time"), { target: { value: "10:30" } });
+  fireEvent.change(sel("people"), { target: { value: 3 } });
+  fireEvent.change(sel("lanes"), { target: { value: 2 } });
+
+  fireEvent.click(screen.getByText("+"));
+  fireEvent.click(screen.getByText("+"));
+  fireEvent.click(screen.getByText("+"));
+
+  const shoes = screen.getAllByRole("textbox");
+  fireEvent.change(shoes[0], { target: { value: "40" } });
+  fireEvent.change(shoes[1], { target: { value: "41" } });
+  fireEvent.change(shoes[2], { target: { value: "42" } });
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  await waitFor(() =>
+    expect(mockNavigate).toHaveBeenCalledWith("/confirmation", expect.any(Object))
+  );
+
+  const saved = JSON.parse(sessionStorage.getItem("confirmation"));
+  expect(saved.bookingId).toBeDefined();
+});
+
+test("renders Confirmation from sessionStorage", () => {
+  sessionStorage.setItem(
+    "confirmation",
+    JSON.stringify({
+      when: "2024-10-10T10:30",
+      lanes: 2,
+      people: 3,
+      price: 560,
+      bookingId: "XYZ999",
+    })
+  );
+
+  render(
+    <MemoryRouter>
+      <Confirmation />
+    </MemoryRouter>
+  );
+
+  expect(screen.getByDisplayValue("2024-10-10 10:30")).toBeInTheDocument();
+  expect(screen.getByDisplayValue("XYZ999")).toBeInTheDocument();
+});
+
+test("does not show any error when all fields are correctly filled", async () => {
+  render(
+    <MemoryRouter>
+      <Booking />
+    </MemoryRouter>
+  );
+
+  fireEvent.change(document.querySelector('input[name="when"]'), {
+    target: { value: "2024-10-10" },
+  });
+
+  fireEvent.change(document.querySelector('input[name="time"]'), {
+    target: { value: "10:30" },
+  });
+
+  fireEvent.change(document.querySelector('input[name="people"]'), {
+    target: { value: 3 },
+  });
+
+  fireEvent.change(document.querySelector('input[name="lanes"]'), {
+    target: { value: 1 },
+  });
+
+  fireEvent.click(screen.getByText("+"));
+  fireEvent.click(screen.getByText("+"));
+  fireEvent.click(screen.getByText("+"));
+
+  const shoes = screen.getAllByRole("textbox");
+
+  fireEvent.change(shoes[0], { target: { value: "40" } });
+  fireEvent.change(shoes[1], { target: { value: "41" } });
+  fireEvent.change(shoes[2], { target: { value: "42" } });
+
+  fireEvent.click(screen.getByText("strIIIIIike!"));
+
+  expect(screen.queryByText("Alla fälten måste vara ifyllda")).toBeNull();
+  expect(
+    screen.queryByText("Antalet skor måste stämma överens med antal spelare")
+  ).toBeNull();
+  expect(screen.queryByText("Alla skor måste vara ifyllda")).toBeNull();
+  expect(screen.queryByText("Det får max vara 4 spelare per bana")).toBeNull();
+});
+
