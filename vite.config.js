@@ -11,7 +11,7 @@ export default defineConfig({
 
     include: ["src/**/*.test.jsx"],
 
-    eexclude: [
+    exclude: [
       "src/main.jsx",
       "src/App.jsx",
       "src/router.jsx",
